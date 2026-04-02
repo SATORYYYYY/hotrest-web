@@ -19,9 +19,20 @@ export function AuthProvider({ children }) {
   const [userData, setUserData] = useState(null)
   const [initializing, setInitializing] = useState(true)
   const [isLoadingUserData, setIsLoadingUserData] = useState(false)
+  const [authError, setAuthError] = useState(null)
 
   useEffect(() => {
+    // Timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (initializing) {
+        console.warn('Auth initialization timeout - proceeding without auth')
+        setInitializing(false)
+        setAuthError('timeout')
+      }
+    }, 10000) // 10 seconds timeout
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      clearTimeout(timeoutId)
       setUser(firebaseUser)
 
       if (firebaseUser) {
@@ -86,15 +97,16 @@ export function AuthProvider({ children }) {
     user,
     userData,
     loading: initializing || isLoadingUserData,
+    authError,
     login,
     register,
     logout,
     isAdmin: userData?.role === 'admin'
-  }), [user, userData, initializing, isLoadingUserData])
+  }), [user, userData, initializing, isLoadingUserData, authError])
 
   return (
     <AuthContext.Provider value={value}>
-      {!initializing && !isLoadingUserData && children}
+      {children}
     </AuthContext.Provider>
   )
 }

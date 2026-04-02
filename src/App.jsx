@@ -39,9 +39,14 @@ function LoadingSpinner() {
 }
 
 function PrivateRoute({ children }) {
-  const { user, userData, loading } = useAuth()
+  const { user, userData, loading, authError } = useAuth()
 
-  if (loading || !userData) {
+  // If there's a timeout error, allow access to login to let user try again
+  if (authError === 'timeout') {
+    return <Navigate to="/login" />
+  }
+
+  if (loading) {
     return <LoadingSpinner />
   }
 
@@ -49,7 +54,12 @@ function PrivateRoute({ children }) {
 }
 
 function PublicRoute({ children }) {
-  const { user, loading } = useAuth()
+  const { user, loading, authError } = useAuth()
+
+  // If there's a timeout error, allow access to login
+  if (authError === 'timeout') {
+    return children
+  }
 
   if (loading) {
     return <LoadingSpinner />
