@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Заполнение данных HotRest</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 { color: #333; }
+    .status {
+      padding: 20px;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+    .progress { background: #cce5ff; color: #004085; }
+    .log {
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+    button {
+      background: #FF6D00;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px 5px 10px 0;
+    }
+    button:hover { background: #E65100; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .info {
+      background: #fff3cd;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔥 Заполнение данных HotRest</h1>
+
+  <div class="info">
+    <strong>База данных:</strong> default<br>
+    <strong>Блюд будет:</strong> 25<br>
+    <strong>Номеров будет:</strong> 100
+  </div>
+
+  <button id="startBtn" onclick="populateData()">Запустить заполнение</button>
+  <button onclick="location.reload()">Обновить</button>
+
+  <div id="status"></div>
+  <div id="log" class="log"></div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDX9w9UI71IdoNQO6JJHcuhokk_HllrRZY",
+      authDomain: "hotrest-3cbf4.firebaseapp.com",
+      projectId: "hotrest-3cbf4",
+      storageBucket: "hotrest-3cbf4.firebasestorage.app",
+      messagingSenderId: "88663668464",
+      appId: "1:88663668464:web:8ad0a12be9cae08febb435"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    // Используем базу данных default
+    const db = getFirestore(app);
+
+    // 25 Dishes
+    const dishes = [
+      { name: "Борщ украинский", category: "Супы", price: 350, description: "Традиционный борщ со сметаной и зеленью", isAvailable: true },
+      { name: "Солянка сборная", category: "Супы", price: 380, description: "Наваристый суп с колбасой и ветчиной", isAvailable: true },
+      { name: "Суп куриный", category: "Супы", price: 280, description: "Легкий куриный бульон с лапшой", isAvailable: true },
+      { name: "Грибной крем-суп", category: "Супы", price: 320, description: "Нежный крем-суп из шампиньонов", isAvailable: true },
+      { name: "Уха", category: "Супы", price: 360, description: "Уха из свежей рыбы", isAvailable: true },
+      { name: "Салат Цезарь", category: "Салаты", price: 450, description: "Романская зелень, курица, пармезан", isAvailable: true },
+      { name: "Салат Греческий", category: "Салаты", price: 380, description: "Свежие овощи и фeta сыр", isAvailable: true },
+      { name: "Оливье", category: "Салаты", price: 320, description: "Классический салат с колбасой", isAvailable: true },
+      { name: "Салат с лососем", category: "Салаты", price: 520, description: "Салат с маринованным лососем", isAvailable: true },
+      { name: "Винегрет", category: "Салаты", price: 280, description: "Традиционный винегрет", isAvailable: true },
+      { name: "Стейк из говядины", category: "Основное", price: 1200, description: "Сочный стейк с овощами", isAvailable: true },
+      { name: "Куриное филе", category: "Основное", price: 580, description: "Запеченное куриное филе", isAvailable: true },
+      { name: "Свинина по-французски", category: "Основное", price: 650, description: "Свинина с картофелем и сыром", isAvailable: true },
+      { name: "Лосось на пару", category: "Основное", price: 890, description: "Лосось с овощами", isAvailable: true },
+      { name: "Пельмени домашние", category: "Основное", price: 420, description: "Ручные пельмени со сметаной", isAvailable: true },
+      { name: "Котлета по-киевски", category: "Основное", price: 550, description: "Куриная котлета с сыром", isAvailable: true },
+      { name: "Шашлык из свинины", category: "Основное", price: 720, description: "Шашлык с овощами и лавашем", isAvailable: true },
+      { name: "Соленые огурцы", category: "Закуски", price: 150, description: "Домашние соленые огурчики", isAvailable: true },
+      { name: "Ассорти мясное", category: "Закуски", price: 680, description: "Нарезка из колбас и ветчины", isAvailable: true },
+      { name: "Сырная тарелка", category: "Закуски", price: 450, description: "Ассорти из 5 видов сыров", isAvailable: true },
+      { name: "Наполеон", category: "Десерты", price: 320, description: "Классический торт Наполеон", isAvailable: true },
+      { name: "Чизкейк", category: "Десерты", price: 350, description: "Нежный чизкейк с ягодами", isAvailable: true },
+      { name: "Мороженое пломбир", category: "Десерты", price: 180, description: "Сливочное мороженое", isAvailable: true },
+      { name: "Компот из ягод", category: "Напитки", price: 120, description: "Домашний компот", isAvailable: true },
+      { name: "Морс клюквенный", category: "Напитки", price: 150, description: "Клюквенный морс", isAvailable: true },
+      { name: "Чай черный", category: "Напитки", price: 80, description: "Ароматный черный чай", isAvailable: true },
+      { name: "Кофе латте", category: "Напитки", price: 220, description: "Кофе с молоком", isAvailable: true }
+    ];
+
+    // 100 Hotel Rooms
+    const roomTypes = [
+      { type: "Стандарт", basePrice: 2500, description: "Уютный номер с необходимым минимумом" },
+      { type: "Комфорт", basePrice: 4000, description: "Просторный номер с улучшенной мебелью" },
+      { type: "Люкс", basePrice: 7500, description: "Элегантный номер с зоной отдыха" },
+      { type: "Делюкс", basePrice: 9500, description: "Просторный номер с панорамным видом" },
+      { type: "Семейный", basePrice: 8500, description: "Большой номер для семьи" },
+      { type: "Президентский", basePrice: 15000, description: "Роскошный VIP номер" }
+    ];
+
+    const features = [
+      "С видом на город", "С видом на море", "С балконом", "С мини-баром",
+      "С кондиционером", "С сейфом", "С телевизором", "С Wi-Fi"
+    ];
+
+    const rooms = [];
+    for (let i = 1; i <= 100; i++) {
+      const roomType = roomTypes[Math.floor(Math.random() * roomTypes.length)];
+      const price = roomType.basePrice + Math.floor(Math.random() * 2000) - 500;
+      const roomFeatures = features.slice(0, 2 + Math.floor(Math.random() * 4)).join(", ");
+
+      rooms.push({
+        name: `${roomType.type} №${i}`,
+        description: `${roomType.description}. ${roomFeatures}.`,
+        price: Math.max(price, 1500),
+        status: Math.random() < 0.3 ? "occupied" : "free"
+      });
+    }
+
+    window.populateData = async function() {
+      const statusEl = document.getElementById('status');
+      const logEl = document.getElementById('log');
+      const btn = document.getElementById('startBtn');
+
+      btn.disabled = true;
+      statusEl.innerHTML = '<div class="status progress">🔄 Заполнение данных...</div>';
+      logEl.textContent = '';
+
+      function log(msg) {
+        logEl.textContent += msg + '\n';
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      try {
+        // Add dishes
+        log('🍽️ Добавляем блюда в ресторан...');
+        for (const dish of dishes) {
+          await addDoc(collection(db, "dishes"), dish);
+          log(`  ✓ ${dish.name} (${dish.category})`);
+        }
+        log(`\n✅ Добавлено ${dishes.length} блюд\n`);
+
+        // Add rooms
+        log('🏨 Добавляем номера в отель...');
+        for (const room of rooms) {
+          await addDoc(collection(db, "rooms"), room);
+          log(`  ✓ ${room.name} - ${room.price}₽`);
+        }
+        log(`\n✅ Добавлено ${rooms.length} номеров\n`);
+
+        statusEl.innerHTML = '<div class="status success">✅ Данные успешно загружены в Firebase!</div>';
+        log('🎉 ГОТОВО! Все данные загружены.');
+
+      } catch (error) {
+        console.error(error);
+        statusEl.innerHTML = `<div class="status error">❌ Ошибка: ${error.message}</div>`;
+        log(`❌ Ошибка: ${error.message}`);
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
